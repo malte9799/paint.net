@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>paint.net</title>
+  <meta name="description" content="A browser recreation of the paint.net image editor: layers, effects, adjustments, selections and more, entirely client-side.">
+  <meta name="theme-color" content="#f3f3f3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#202020" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="img/icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/app.css">
+  <script>
+    // Apply theme before first paint to avoid a flash.
+    try {
+      var s = JSON.parse(localStorage.getItem('pdnweb.settings.v1') || '{}');
+      var t = s.theme || 'system';
+      var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <noscript>paint.net web requires JavaScript.</noscript>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

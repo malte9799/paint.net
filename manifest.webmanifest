@@ -1,0 +1,14 @@
+{
+  "name": "paint.net web",
+  "short_name": "paint.net",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f3f3",
+  "theme_color": "#2f7bd8",
+  "icons": [{ "src": "img/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }],
+  "file_handlers": [{
+    "action": "./",
+    "accept": { "image/png": [".png"], "image/jpeg": [".jpg", ".jpeg"], "image/webp": [".webp"], "image/bmp": [".bmp"], "image/gif": [".gif"], "image/openraster": [".ora"] }
+  }]
+}
