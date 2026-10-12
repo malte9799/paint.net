@@ -298,6 +298,7 @@ export class App extends Emitter {
     if (pos && pos.x + canvas.width <= d.width && pos.y + canvas.height <= d.height) { x = pos.x; y = pos.y; } else { x = Math.min(vis.x, Math.max(0, d.width - canvas.width)); y = Math.min(vis.y, Math.max(0, d.height - canvas.height)); }
     this.setTool('moveselected');
     this.tools.get('moveselected').beginPaste(canvas, x, y);
+    this.flashStatus('Pasted. Drag the selection to move it, or press Enter to finish.');
   }
   pasteAsNewImage(canvas) {
     const d = new Document(canvas.width, canvas.height, { baseName: 'Paste into New Image', baseIcon: 'pasteimage' });
@@ -327,17 +328,40 @@ export class App extends Emitter {
     map.set('Ctrl+Shift+Z', 'layers.rotatezoom');
     map.set('Ctrl+Alt+Z', 'edit.redo');
 
+    // Only real text fields keep keyboard shortcuts for themselves; checkboxes, sliders and
+    // buttons (e.g. after toggling layer visibility) must not swallow Ctrl+C/V and friends.
+    const isTextField = (el) => !!el && el !== catcher && (el.isContentEditable || el.tagName === 'TEXTAREA' ||
+      (el.tagName === 'INPUT' && /^(text|number|search|email|url|password|tel)$/i.test(el.type)));
+    // Hidden field that receives Ctrl+V so every browser (incl. Safari/Firefox) fires a paste
+    // event carrying the clipboard contents, whatever element had focus.
+    const catcher = h('textarea.text-tool-input.paste-catcher', { tabindex: -1, 'aria-hidden': 'true' });
+    document.body.appendChild(catcher);
+    let pasteTimer = 0;
+    const endPasteCapture = () => {
+      clearTimeout(pasteTimer);
+      pasteTimer = 0;
+      catcher.value = '';
+      if (document.activeElement === catcher) this.view.display.focus({ preventScroll: true });
+    };
+
     window.addEventListener('keydown', (e) => {
       if (openDialogCount()) return;
       const tgt = e.target;
-      const typing = tgt && (/^(INPUT|TEXTAREA|SELECT)$/.test(tgt.tagName) || tgt.isContentEditable);
-      if (typing) return;
+      if (isTextField(tgt)) return;
+      if (tgt && tgt.tagName === 'SELECT' && !(e.ctrlKey || e.metaKey || e.altKey)) return;
       if (e.key === ' ' && !e.repeat) { this.view.setSpace(true); e.preventDefault(); return; }
       if (e.key === 'Escape') closeAllMenus();
       if (this.activeTool.onKeyDown(e)) { e.preventDefault(); this.view.requestRender(); return; }
       const name = keyName(e);
-      // Let the native paste event deliver clipboard images (no permission prompt).
-      if (name === 'Ctrl+V') return;
+      // Let the native paste event deliver clipboard images (no permission prompt). If the
+      // browser never fires it, fall back to the async clipboard API / internal clipboard.
+      if (name === 'Ctrl+V') {
+        catcher.value = '';
+        catcher.focus({ preventScroll: true });
+        clearTimeout(pasteTimer);
+        pasteTimer = setTimeout(() => { endPasteCapture(); this.run('edit.paste'); }, 400);
+        return;
+      }
       const cmd = map.get(name);
       if (cmd) { e.preventDefault(); this.run(cmd); return; }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -359,10 +383,10 @@ export class App extends Emitter {
     window.addEventListener('keyup', (e) => { if (e.key === ' ') this.view.setSpace(false); });
     window.addEventListener('paste', async (e) => {
       if (openDialogCount()) return;
-      const t = e.target;
-      if (t && (/^(INPUT|TEXTAREA)$/.test(t.tagName) || t.isContentEditable)) return;
+      if (isTextField(e.target)) return;
+      endPasteCapture();
       const items = [...(e.clipboardData?.items || [])];
-      const img = items.find((i) => i.type.startsWith('image/'));
+      const img = items.find((i) => i.kind === 'file' && i.type.startsWith('image/'));
       e.preventDefault();
       if (img) {
         const canvas = await blobToCanvas(img.getAsFile());

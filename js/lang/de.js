@@ -464,6 +464,7 @@ export const DE = {
     'Das einzufügende Bild ist größer als die Leinwand. Was möchten Sie tun?',
   'Expand canvas': 'Leinwand erweitern',
   'Keep canvas size': 'Leinwandgröße beibehalten',
+  'Pasted. Drag the selection to move it, or press Enter to finish.': 'Eingefügt. Auswahl ziehen, um sie zu verschieben, oder Eingabetaste zum Abschließen.',
   'The clipboard does not contain an image.': 'Die Zwischenablage enthält kein Bild.',
   'Could not import the file.': 'Die Datei konnte nicht importiert werden.',
   'Reset the color palette to the default colors?': 'Die Farbpalette auf die Standardfarben zurücksetzen?',

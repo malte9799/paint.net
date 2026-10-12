@@ -105,6 +105,7 @@ class TransformTool extends Tool {
     this.app.emit('selectionsize', null);
   }
   onKeyDown(e) {
+    if (e.key === 'Enter' && this.sess) { this.commit(); this.render(); return true; }
     const k = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
     if (!k || !this.doc || (this.doc.selection.empty && this.id === 'moveselection')) return false;
     const step = e.shiftKey ? 10 : 1;
@@ -141,6 +142,7 @@ class TransformTool extends Tool {
     return toolCursor(iconSvg(this.icon), 'move');
   }
   deactivate() { this.drag = null; this.sess = null; }
+  commit() { this.sess = null; }
 }
 
 export class MoveSelectedTool extends TransformTool {
