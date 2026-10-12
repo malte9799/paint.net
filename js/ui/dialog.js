@@ -56,6 +56,9 @@ export class Dialog {
     return new Promise((res) => { this._resolve = res; });
   }
   close(value) {
+    // Commit a field that is still being edited (fires its change event) before closing.
+    const ae = document.activeElement;
+    if (ae && this.el.contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) ae.blur();
     if (this.beforeClose && this.beforeClose(value) === false) return;
     window.removeEventListener('keydown', this._keydown, true);
     const i = stack.indexOf(this);

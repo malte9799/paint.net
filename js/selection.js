@@ -133,11 +133,14 @@ export class Selection {
     const w = this.w, h = this.h;
     const data = this.ctx.getImageData(0, 0, w, h).data;
     const inside = new Uint8Array(w * h);
-    let minX = w, minY = h, maxX = -1, maxY = -1;
+    // Bounds cover every pixel the mask touches (including the antialiased fringe), since
+    // operations clip through the soft mask; `inside` (outline, contains) uses a 50% threshold.
+    let minX = w, minY = h, maxX = -1, maxY = -1, any = false;
     for (let y = 0, i = 3, p = 0; y < h; y++) {
       for (let x = 0; x < w; x++, i += 4, p++) {
-        if (data[i] >= 128) {
-          inside[p] = 1;
+        const a = data[i];
+        if (a) {
+          if (a >= 128) { inside[p] = 1; any = true; }
           if (x < minX) minX = x;
           if (x > maxX) maxX = x;
           if (y < minY) minY = y;
@@ -145,7 +148,7 @@ export class Selection {
         }
       }
     }
-    if (maxX < 0) {
+    if (!any) {
       // Anything below the threshold is dropped so `empty` really means empty.
       this.ctx.clearRect(0, 0, w, h);
       this.empty = true; this.bounds = null; this.outline = null; this._inside = null;

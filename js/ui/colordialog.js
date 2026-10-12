@@ -62,7 +62,9 @@ export async function colorDialog(app, which) {
     return h('div.cd-row', h('label', t(label)), gs.el, num.el);
   };
   const hex = h('input.text.hex-input', { type: 'text', maxlength: 9, spellcheck: false });
-  hex.addEventListener('change', () => { const v = fromHex(hex.value); if (v) { Object.assign(c, v); hsv = rgbToHsv(c.r, c.g, c.b); sync(); } });
+  const applyHex = () => { const v = fromHex(hex.value); if (v) { Object.assign(c, v); hsv = rgbToHsv(c.r, c.g, c.b); sync(); } };
+  hex.addEventListener('change', applyHex);
+  hex.addEventListener('input', () => { if (/^#?([0-9a-f]{6}|[0-9a-f]{8})$/i.test(hex.value.trim())) applyHex(); });
   hex.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); hex.dispatchEvent(new Event('change')); } });
 
   const oldSw = h('div.cd-sw.old', { title: t('Original color — click to restore'), onclick: () => { Object.assign(c, orig[mode]); hsv = rgbToHsv(c.r, c.g, c.b); sync(); } });

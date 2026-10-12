@@ -7,7 +7,7 @@ import { createTools } from './tools/index.js';
 import { buildCommands } from './commands.js';
 import { MenuBar, closeAllMenus } from './ui/menubar.js';
 import { TopBar, MainToolbar } from './ui/toolbar.js';
-import { ToolOptionsBar } from './ui/tooloptions.js';
+import { ToolOptionsBar, BRUSH_SIZES } from './ui/tooloptions.js';
 import { StatusBar } from './ui/statusbar.js';
 import { createToolsWindow, createHistoryWindow, createLayersWindow, createColorsWindow } from './ui/windows.js';
 import { h, icon } from './ui/dom.js';
@@ -368,8 +368,9 @@ export class App extends Emitter {
       const k = e.key.toUpperCase();
       if (k === 'X') { this.swapColors(); return; }
       if (e.key === '[' || e.key === ']') {
-        const w = this.toolSettings.brushWidth, step = w < 10 ? 1 : w < 50 ? 5 : w < 200 ? 10 : 50;
-        this.setToolSetting('brushWidth', Math.max(1, Math.min(2000, w + (e.key === ']' ? step : -step))));
+        const w = this.toolSettings.brushWidth;
+        const next = e.key === ']' ? BRUSH_SIZES.find((s) => s > w) ?? w : [...BRUSH_SIZES].reverse().find((s) => s < w) ?? w;
+        this.setToolSetting('brushWidth', next);
         return;
       }
       if (/^[A-Z]$/.test(k)) {

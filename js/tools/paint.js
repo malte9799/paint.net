@@ -212,6 +212,9 @@ export class RecolorTool extends Tool {
     this.beforeData = s.before.getContext('2d').getImageData(0, 0, doc.width, doc.height).data;
     this.selData = doc.selection.empty ? null : doc.selection.ctx.getImageData(0, 0, doc.width, doc.height).data;
     this.limit = colorTolerance(this.settings.tolerance);
+    // Strongest coverage each pixel has received in this stroke, so overlapping dabs
+    // never weaken an earlier, stronger recolor.
+    this.coverage = new Float32Array(doc.width * doc.height);
     this.last = p;
     this.dab(p);
   }
@@ -244,8 +247,10 @@ export class RecolorTool extends Tool {
         const dist = Math.hypot(ix + 0.5 - p.x, iy + 0.5 - p.y);
         let cov = aa ? clamp(rad - dist + 0.5, 0, 1) : dist <= rad ? 1 : 0;
         if (!cov) continue;
-        const si = (iy * W + ix) * 4;
+        const pi = iy * W + ix, si = pi * 4;
         if (sel) cov *= sel[si + 3] / 255;
+        if (cov <= this.coverage[pi]) continue;
+        this.coverage[pi] = cov;
         if (!cov || !colorClose(src, si, f.r, f.g, f.b, f.a, this.limit)) continue;
         const o = (y * rect.w + x) * 4;
         d[o] = src[si] + (clamp(src[si] + dr, 0, 255) - src[si]) * cov;

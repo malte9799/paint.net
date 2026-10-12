@@ -55,7 +55,7 @@ export function pixelItem(doc, layer, rect, before, name, icon, extra) {
   const beforeData = before instanceof ImageData ? before : before.getContext('2d').getImageData(x, y, rect.w, rect.h);
   const afterData = layer.ctx.getImageData(x, y, rect.w, rect.h);
   return {
-    name, icon,
+    name, icon, rect: { ...rect },
     undo() {
       layer.ctx.putImageData(beforeData, x, y);
       extra?.undo?.();

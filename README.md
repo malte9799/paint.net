@@ -57,6 +57,18 @@ npx http-server -c-1 .
 python3 -m http.server
 ```
 
+## Tests
+
+The repository includes an end-to-end test suite (Playwright, Chromium) with about 180 tests. It covers every tool, command, effect, file format, layer blend mode, persistence, clipboard, the German translation and the view. It also includes a seeded **history fuzzer**: it runs random operations and checks that every undo/redo step reproduces its exact pixels.
+
+```sh
+npm install
+npx playwright install chromium   # once
+npm test                          # or: npx playwright test tests/tools.spec.js
+```
+
+The tests run automatically on every push through `.github/workflows/tests.yml`.
+
 ## Deploying to GitHub Pages
 
 The workflow in `.github/workflows/pages.yml` publishes the repository root on every push to `main`. To turn it on, go to **Settings → Pages → Build and deployment → Source: GitHub Actions**. You can also choose *Deploy from a branch* and pick the branch root. The `.nojekyll` file stops Jekyll from processing the site.

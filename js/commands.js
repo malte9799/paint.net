@@ -17,7 +17,10 @@ function transformLayers(doc, w, h, draw) {
   doc.layers.forEach((l, i) => {
     const c = createCanvas(w, h);
     const ctx = c.getContext('2d');
+    // The context is the layer's for good: never leak transforms/composite modes into it.
+    ctx.save();
     draw(ctx, l, i);
+    ctx.restore();
     l.canvas = c;
   });
   doc.width = w;
@@ -181,7 +184,7 @@ export function buildCommands(app) {
     const src = merged ? d.flatten() : d.activeLayer.canvas;
     const c = createCanvas(r.w, r.h), ctx = c.getContext('2d');
     ctx.drawImage(src, -r.x, -r.y);
-    if (!d.selection.empty) { ctx.globalCompositeOperation = 'destination-in'; ctx.drawImage(d.selection.mask, -r.x, -r.y); }
+    if (!d.selection.empty) { ctx.globalCompositeOperation = 'destination-in'; ctx.drawImage(d.selection.mask, -r.x, -r.y); ctx.globalCompositeOperation = 'source-over'; }
     app.clipboard = { canvas: c, pos: { x: r.x, y: r.y }, time: Date.now() };
     app.emit('clipboard');
     try {
@@ -377,8 +380,10 @@ export function buildCommands(app) {
   });
   const flipLayer = (name, icon, sx, sy) => () => layerOp(name, icon, (d) => {
     const l = d.activeLayer, c = createCanvas(d.width, d.height), x = c.getContext('2d');
+    x.save();
     x.setTransform(sx, 0, 0, sy, sx < 0 ? d.width : 0, sy < 0 ? d.height : 0);
     x.drawImage(l.canvas, 0, 0);
+    x.restore();
     l.canvas = c;
   });
   def('layers.fliph', { label: 'Flip Horizontal', icon: 'fliph', run: flipLayer('Flip Layer Horizontal', 'fliph', -1, 1) });
