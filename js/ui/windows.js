@@ -3,6 +3,7 @@ import { Settings } from '../storage.js';
 import { clamp, debounce, createCanvas } from '../util.js';
 import { toCss, toHex } from '../color.js';
 import { colorDialog } from './colordialog.js';
+import { t, tKeys } from '../i18n.js';
 
 // Floating, draggable tool window (paint.net style)
 export class FloatWindow {
@@ -10,7 +11,7 @@ export class FloatWindow {
     this.app = app;
     this.id = id;
     this.defaultPos = defaultPos;
-    const titleBar = h('div.fw-title', h('span.fw-title-text', title), h('button.fw-close', { title: 'Close', onclick: () => this.hide() }, icon('close')));
+    const titleBar = h('div.fw-title', h('span.fw-title-text', t(title)), h('button.fw-close', { title: t('Close'), onclick: () => this.hide() }, icon('close')));
     this.body = h('div.fw-body', content);
     this.el = h('div.floatwin#win-' + id, titleBar, this.body, footer ? h('div.fw-footer', footer) : null);
     if (resizable) {
@@ -83,9 +84,9 @@ export class FloatWindow {
 export function createToolsWindow(app) {
   const grid = h('div.tools-grid');
   const btns = new Map();
-  for (const t of app.tools.values()) {
-    const b = h('button.tool-btn', { title: `${t.name} (${t.key})`, onclick: () => app.setTool(t.id) }, icon(t.icon));
-    btns.set(t.id, b);
+  for (const tool of app.tools.values()) {
+    const b = h('button.tool-btn', { title: `${t(tool.name)} (${tool.key})`, onclick: () => app.setTool(tool.id) }, icon(tool.icon));
+    btns.set(tool.id, b);
     grid.appendChild(b);
   }
   const upd = () => btns.forEach((b, id) => b.classList.toggle('active', app.activeTool.id === id));
@@ -97,10 +98,10 @@ export function createToolsWindow(app) {
 // ---------------- History window ----------------
 export function createHistoryWindow(app) {
   const list = h('div.history-list', { role: 'listbox' });
-  const B = (cmd, ic, title, fn) => h('button.fw-btn', { title, onclick: fn }, icon(ic));
+  const B = (cmd, ic, title, fn) => h('button.fw-btn', { title: t(title), onclick: fn }, icon(ic));
   const bFirst = B('first', 'first', 'Undo to beginning', () => { app.commitTool(); app.activeDoc?.history.goto(0); });
-  const bUndo = B('undo', 'undo', 'Undo (Ctrl+Z)', () => app.run('edit.undo'));
-  const bRedo = B('redo', 'redo', 'Redo (Ctrl+Y)', () => app.run('edit.redo'));
+  const bUndo = B('undo', 'undo', 'Undo (' + tKeys('Ctrl+Z') + ')', () => app.run('edit.undo'));
+  const bRedo = B('redo', 'redo', 'Redo (' + tKeys('Ctrl+Y') + ')', () => app.run('edit.redo'));
   const bLast = B('last', 'last', 'Redo to end', () => { app.commitTool(); const d = app.activeDoc; d?.history.goto(d.history.items.length - 1); });
   const footer = h('div.fw-buttons', bFirst, bUndo, bRedo, bLast);
   const render = () => {
@@ -110,7 +111,7 @@ export function createHistoryWindow(app) {
     if (hist) {
       hist.items.forEach((it, i) => {
         const row = h('div.history-item' + (i === hist.current ? '.current' : '') + (i > hist.current ? '.redo' : ''),
-          { onclick: () => { app.commitTool(); hist.goto(i); } }, icon(it.icon || 'image'), h('span', it.name));
+          { onclick: () => { app.commitTool(); hist.goto(i); } }, icon(it.icon || 'image'), h('span', t(it.name)));
         list.appendChild(row);
       });
       list.querySelector('.current')?.scrollIntoView({ block: 'nearest' });
@@ -127,7 +128,7 @@ export function createHistoryWindow(app) {
 // ---------------- Layers window ----------------
 export function createLayersWindow(app) {
   const list = h('div.layers-list', { role: 'listbox' });
-  const B = (cmd) => { const c = app.commands.get(cmd); const b = h('button.fw-btn', { title: c.label.replace(/…$/, '') + (c.shortcut ? ` (${c.shortcut})` : ''), onclick: () => app.run(cmd) }, icon(c.icon)); b._cmd = cmd; return b; };
+  const B = (cmd) => { const c = app.commands.get(cmd); const b = h('button.fw-btn', { title: t(c.label.replace(/…$/, '')) + (c.shortcut ? ` (${tKeys(c.shortcut)})` : ''), onclick: () => app.run(cmd) }, icon(c.icon)); b._cmd = cmd; return b; };
   const btns = ['layers.add', 'layers.delete', 'layers.duplicate', 'layers.merge', 'layers.up', 'layers.down', 'layers.properties'].map(B);
   const footer = h('div.fw-buttons', btns);
   const thumbs = new Map();
@@ -157,7 +158,7 @@ export function createLayersWindow(app) {
         const cv = h('canvas.layer-thumb', { width: 48, height: 36 });
         drawThumb(cv, l, d);
         thumbs.set(l, cv);
-        const vis = h('input.layer-vis', { type: 'checkbox', checked: l.visible, title: 'Visible' });
+        const vis = h('input.layer-vis', { type: 'checkbox', checked: l.visible, title: t('Visible') });
         vis.addEventListener('click', (e) => e.stopPropagation());
         vis.addEventListener('change', () => app.layerOp(vis.checked ? 'Layer Shown' : 'Layer Hidden', 'eye', () => { l.visible = vis.checked; }));
         const row = h('div.layer-item' + (i === d.activeIndex ? '.active' : ''), { draggable: true, onclick: () => { d.setActiveLayer(i); }, ondblclick: () => { d.setActiveLayer(i); app.run('layers.properties'); } },
@@ -195,10 +196,10 @@ export function createLayersWindow(app) {
 
 // ---------------- Colors window ----------------
 export function createColorsWindow(app) {
-  const prim = h('button.swatch.primary', { title: 'Primary color — click to edit' });
-  const sec = h('button.swatch.secondary', { title: 'Secondary color — click to edit' });
-  const swap = h('button.swatch-swap', { title: 'Swap colors (X)', onclick: () => app.swapColors() }, icon('swap'));
-  const reset = h('button.swatch-reset', { title: 'Reset to black and white', onclick: () => app.resetColors() });
+  const prim = h('button.swatch.primary', { title: t('Primary color — click to edit') });
+  const sec = h('button.swatch.secondary', { title: t('Secondary color — click to edit') });
+  const swap = h('button.swatch-swap', { title: t('Swap colors') + ' (X)', onclick: () => app.swapColors() }, icon('swap'));
+  const reset = h('button.swatch-reset', { title: t('Reset to black and white'), onclick: () => app.resetColors() });
   reset.innerHTML = '<svg viewBox="0 0 12 12" width="12" height="12"><rect x="4.5" y="4.5" width="7" height="7" fill="#fff" stroke="#000"/><rect x=".5" y=".5" width="7" height="7" fill="#000" stroke="#000"/></svg>';
   prim.addEventListener('click', () => colorDialog(app, 'primary'));
   sec.addEventListener('click', () => colorDialog(app, 'secondary'));
@@ -208,7 +209,7 @@ export function createColorsWindow(app) {
   const renderPal = () => {
     clear(pal);
     app.palette.forEach((c, i) => {
-      const s = h('button.pal-swatch', { title: '#' + toHex(c, c.a < 255) + '\nLeft click: set primary, Right click: set secondary, Shift+click: store current primary here' });
+      const s = h('button.pal-swatch', { title: '#' + toHex(c, c.a < 255) + '\n' + t('Left click: set primary, Right click: set secondary, Shift+click: store current primary here') });
       s.style.setProperty('--c', toCss(c));
       s.addEventListener('click', (e) => { if (e.shiftKey) app.setPaletteColor(i, app.primary); else app.setPrimary({ ...c }); });
       s.addEventListener('contextmenu', (e) => { e.preventDefault(); if (e.shiftKey) app.setPaletteColor(i, app.secondary); else app.setSecondary({ ...c }); });
@@ -224,7 +225,7 @@ export function createColorsWindow(app) {
   app.on('palette', renderPal);
   render();
   renderPal();
-  const content = h('div.colors-win', h('div.colors-top', sw, h('div.colors-info', primHex, h('button.btn.small', { onclick: () => colorDialog(app, 'primary') }, 'More >>'))), pal);
+  const content = h('div.colors-win', h('div.colors-top', sw, h('div.colors-info', primHex, h('button.btn.small', { onclick: () => colorDialog(app, 'primary') }, t('More') + ' >>'))), pal);
   return new FloatWindow(app, { id: 'colors', title: 'Colors', content, defaultPos: (r) => ({ x: 8, y: Math.max(300, r.height - 228) }) });
 }
 

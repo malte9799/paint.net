@@ -1,6 +1,7 @@
 import { h, icon, clear } from './dom.js';
 import { EFFECTS, EFFECT_MENUS } from '../effects/registry.js';
 import { listRecent, deserializeDoc } from '../storage.js';
+import { t, tKeys } from '../i18n.js';
 
 const SEP = '-';
 
@@ -25,7 +26,7 @@ async function recentItems(app) {
   const list = await listRecent();
   if (!list.length) return [{ label: '(No recent images)', disabled: true }];
   return list.map((rec) => ({
-    label: rec.name, thumb: rec.thumb,
+    label: rec.name, raw: true, thumb: rec.thumb,
     run: async () => { const d = await deserializeDoc(rec, { newId: true }); app.addDocument(d); },
   }));
 }
@@ -39,7 +40,7 @@ export class MenuBar {
     this.active = null;
     this.defs = menuDefs(app);
     this.buttons = this.defs.map((m, i) => {
-      const b = h('button.menu-top', { role: 'menuitem', dataset: { i } }, m.label);
+      const b = h('button.menu-top', { role: 'menuitem', dataset: { i } }, t(m.label));
       b.addEventListener('pointerdown', (e) => { e.preventDefault(); if (this.active === i) this.close(); else this.open(i); });
       b.addEventListener('pointerenter', () => { if (this.active != null && this.active !== i) this.open(i); });
       return b;
@@ -88,8 +89,8 @@ export function showPopup(app, items, x, y, onClose, parent = null) {
       } else cfg = { ...it, checked: typeof it.checked === 'function' ? it.checked() : it.checked };
       const row = h('div.menu-item' + (cfg.disabled ? '.disabled' : ''), { role: 'menuitem' },
         h('span.mi-icon', cfg.checked ? icon('check') : cfg.thumb ? thumbImg(cfg.thumb) : cfg.icon ? icon(cfg.icon) : null),
-        h('span.mi-label', cfg.label),
-        h('span.mi-shortcut', cfg.shortcut || ''),
+        h('span.mi-label', cfg.raw ? cfg.label : t(cfg.label)),
+        h('span.mi-shortcut', tKeys(cfg.shortcut)),
         h('span.mi-arrow', cfg.items ? icon('chevright') : null));
       if (cfg.items) {
         const openSub = () => {

@@ -12,6 +12,7 @@ class SettingsStore extends Emitter {
     this._save = debounce(() => {
       try { localStorage.setItem(LS_KEY, JSON.stringify(this.data)); } catch { /* quota / private mode */ }
     }, 250);
+    window.addEventListener('pagehide', () => this._save.flush());
   }
   get(key, def) { return key in this.data ? this.data[key] : def; }
   set(key, value) {

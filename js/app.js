@@ -19,6 +19,7 @@ import { openFiles } from './fileio.js';
 import { blobToCanvas } from './util.js';
 import { toCss } from './color.js';
 import { saveDocument } from './fileio.js';
+import { t, tKeys } from './i18n.js';
 
 export const DEFAULT_TOOL_SETTINGS = {
   brushWidth: 2, hardness: 75, antialias: true, blendMode: 'normal',
@@ -72,10 +73,10 @@ export class App extends Emitter {
     this.view = new CanvasView(this, this.workspace);
     this.winLayer = h('div.window-layer');
     this.workspace.appendChild(this.winLayer);
-    this.emptyMsg = h('div.empty-msg', h('div', 'No images are open.'), h('div.empty-actions',
-      h('button.btn', { onclick: () => this.run('file.new') }, icon('new'), ' New image'),
-      h('button.btn', { onclick: () => this.run('file.open') }, icon('open'), ' Open…')),
-    h('div.hint', 'You can also drag and drop image files here, or paste an image (Ctrl+V).'));
+    this.emptyMsg = h('div.empty-msg', h('div', t('No images are open.')), h('div.empty-actions',
+      h('button.btn', { onclick: () => this.run('file.new') }, icon('new'), ' ' + t('New image')),
+      h('button.btn', { onclick: () => this.run('file.open') }, icon('open'), ' ' + t('Open…'))),
+    h('div.hint', t('You can also drag and drop image files here, or paste an image ({key}).', { key: tKeys('Ctrl+V') })));
     this.workspace.appendChild(this.emptyMsg);
     this.statusbar = new StatusBar(this, sbHost);
     this.windows.tools = createToolsWindow(this);
@@ -159,7 +160,7 @@ export class App extends Emitter {
       this.setActiveDocument(doc);
       const res = await new Dialog({
         title: 'Unsaved Changes', icon: 'warning', width: 440,
-        content: h('div.msgbox', h('div.msgbox-icon', icon('warning')), h('div.msgbox-text', `Save changes to "${doc.name}" before closing?`)),
+        content: h('div.msgbox', h('div.msgbox-icon', icon('warning')), h('div.msgbox-text', t('Save changes to "{name}" before closing?', { name: doc.name }))),
         buttons: [{ label: 'Save', value: 'save', primary: true }, { label: "Don't Save", value: 'discard' }, { label: 'Cancel', value: 'cancel', cancel: true }],
       }).show();
       if (res === 'cancel') return false;
@@ -264,7 +265,7 @@ export class App extends Emitter {
     if (!c) { console.warn('Unknown command', id); return; }
     if (!c.enabled()) return;
     closeAllMenus();
-    try { await c.run(...args); } catch (e) { console.error(`Command ${id} failed`, e); this.flashStatus('Error: ' + (e.message || e)); }
+    try { await c.run(...args); } catch (e) { console.error(`Command ${id} failed`, e); this.flashStatus(t('Error') + ': ' + (e.message || e)); }
     this.emit('history'); // refresh enabled states
   }
 
@@ -273,7 +274,7 @@ export class App extends Emitter {
     const W0 = d.width, H0 = d.height;
     recordDocOp(d, name, 'canvassize', () => {
       transformLayers(d, w, hgt, (c, l, i) => {
-        if (i === 0 && fillBg && l.name === 'Background') { c.fillStyle = toCss(this.secondary); c.fillRect(0, 0, w, hgt); c.clearRect(ox, oy, W0, H0); }
+        if (i === 0 && fillBg) { c.fillStyle = toCss(this.secondary); c.fillRect(0, 0, w, hgt); c.clearRect(ox, oy, W0, H0); }
         c.drawImage(l.canvas, ox, oy);
       });
       transformSelection(d, w, hgt, new DOMMatrix([1, 0, 0, 1, ox, oy]));
@@ -300,7 +301,7 @@ export class App extends Emitter {
   }
   pasteAsNewImage(canvas) {
     const d = new Document(canvas.width, canvas.height, { baseName: 'Paste into New Image', baseIcon: 'pasteimage' });
-    d.layers.push(Layer.fromCanvas(canvas, 'Background'));
+    d.layers.push(Layer.fromCanvas(canvas, t('Background')));
     this.addDocument(d);
     d.markDirty();
   }

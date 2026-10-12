@@ -37,6 +37,10 @@ Effects show a live preview, run in a Web Worker, apply only inside the selectio
 - Copy, Copy Merged, Cut, Paste, Paste into New Layer and Paste into New Image use the system clipboard.
 - Print.
 
+## Languages
+
+The app comes in **English** and **German (Deutsch)**. By default it follows your browser's language. To pick one yourself, go to **Settings → Language**; the change takes effect after a reload. Translations live in `js/lang/`, keyed by the English text. To add a language, create a file like `js/lang/de.js` and register it in `js/i18n.js`.
+
 ## Storage
 
 - **IndexedDB** holds the open images, with all their layers, so they come back when you reload. It also holds the *Open Recent* list.
@@ -73,6 +77,7 @@ This is a close functional recreation, not a port. The icons are original artwor
 index.html            entry point
 css/app.css           all styling (light and dark themes)
 js/app.js             application state, documents, keyboard, persistence
+js/i18n.js, js/lang/  translations (t() helper, German dictionary)
 js/document.js        Document/Layer model and layer blending
 js/history.js         undo/redo
 js/selection.js       mask-based selection and outline tracing

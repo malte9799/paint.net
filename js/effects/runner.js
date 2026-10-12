@@ -3,6 +3,7 @@ import { Dialog, sliderRow, angleChooser, panChooser, checkbox, selectBox, numbe
 import { h, icon, dragPointer } from '../ui/dom.js';
 import { cloneCanvas, createCanvas, debounce, clamp } from '../util.js';
 import { pixelItem } from '../history.js';
+import { t } from '../i18n.js';
 
 let worker = null, workerOk = true, msgId = 0;
 const pending = new Map();
@@ -120,7 +121,7 @@ export async function runEffectCommand(app, id, { repeat = false } = {}) {
   const status = h('span.fx-status', '');
   const doRender = async () => {
     dirty = false;
-    status.textContent = 'Rendering…';
+    status.textContent = t('Rendering…');
     const p = JSON.parse(JSON.stringify(params));
     const job = render({ effect: id, srcData, rect, params: p, env, srcKey });
     rendering = job;
@@ -130,7 +131,7 @@ export async function runEffectCommand(app, id, { repeat = false } = {}) {
       latest = data;
       apply(data);
       status.textContent = '';
-    } catch (e) { if (e.message !== 'cancelled') { console.error(e); status.textContent = 'Error'; } }
+    } catch (e) { if (e.message !== 'cancelled') { console.error(e); status.textContent = t('Error'); } }
     finally { if (rendering === job) rendering = null; }
   };
   const schedule = debounce(() => doRender(), 60);
@@ -145,11 +146,11 @@ export async function runEffectCommand(app, id, { repeat = false } = {}) {
         controls.push(sliderRow({ label: pd.label, value: params[pd.key], min: pd.min, max: pd.max, step: pd.step || 1, decimals: pd.decimals || 0, def: pd.def, onInput: set }).el); break;
       case 'angle': controls.push(angleChooser({ label: pd.label, value: params[pd.key], def: pd.def, onInput: set }).el); break;
       case 'bool': controls.push(h('div.prop-row', checkbox({ label: pd.label, checked: params[pd.key], onChange: set }).el)); break;
-      case 'choice': controls.push(h('div.prop-row', h('div.prop-label', pd.label), selectBox({ options: pd.options, value: params[pd.key], onChange: set }).el)); break;
+      case 'choice': controls.push(h('div.prop-row', h('div.prop-label', t(pd.label)), selectBox({ options: pd.options, value: params[pd.key], onChange: set }).el)); break;
       case 'pan': controls.push(panChooser({ label: pd.label, value: params[pd.key], def: pd.def, onInput: set, thumb }).el); break;
       case 'seed': {
         const lbl = h('span', '');
-        controls.push(h('div.prop-row', h('div.prop-label', pd.label), h('div.prop-ctl', h('button.btn', { onclick: () => { params[pd.key] = Math.floor(Math.random() * 1e9); changed(); } }, 'Reseed'), lbl)));
+        controls.push(h('div.prop-row', h('div.prop-label', t(pd.label)), h('div.prop-ctl', h('button.btn', { onclick: () => { params[pd.key] = Math.floor(Math.random() * 1e9); changed(); } }, t('Reseed')), lbl)));
         break;
       }
       case 'curves': controls.push(curvesEditor(params[pd.key], changed, srcData, rect)); break;
@@ -252,12 +253,12 @@ function curvesEditor(state, changed, srcData, rect) {
       }
     });
   });
-  const reset = h('button.btn', { onclick: () => { for (const k of ['l', 'r', 'g', 'b']) state[k] = [[0, 0], [255, 255]]; draw(); changed(); } }, 'Reset');
+  const reset = h('button.btn', { onclick: () => { for (const k of ['l', 'r', 'g', 'b']) state[k] = [[0, 0], [255, 255]]; draw(); changed(); } }, t('Reset'));
   requestAnimationFrame(draw);
   return h('div.curves-editor',
-    h('div.prop-row', h('div.prop-label', 'Transfer map'), h('div.prop-ctl', modeSel.el, chk)),
+    h('div.prop-row', h('div.prop-label', t('Transfer map')), h('div.prop-ctl', modeSel.el, chk)),
     cv,
-    h('div.curves-foot', h('span.hint', 'Click to add a point, drag a point outside to remove it.'), reset));
+    h('div.curves-foot', h('span.hint', t('Click to add a point, drag a point outside to remove it.')), reset));
 }
 
 // ---------- Levels editor ----------
@@ -292,14 +293,14 @@ function levelsEditor(L, changed, srcData, rect) {
     for (; lo < 255; lo++) { acc += lum(lo); if (acc > cut) break; }
     acc = 0; for (; hi > 0; hi--) { acc += lum(hi); if (acc > cut) break; }
     Object.assign(L, { inLo: lo, inHi: Math.max(lo + 1, hi), gamma: 1 }); sync(); upd();
-  } }, 'Auto');
-  const reset = h('button.btn', { onclick: () => { Object.assign(L, { inLo: 0, inHi: 255, gamma: 1, outLo: 0, outHi: 255 }); sync(); upd(); } }, 'Reset');
+  } }, t('Auto'));
+  const reset = h('button.btn', { onclick: () => { Object.assign(L, { inLo: 0, inHi: 255, gamma: 1, outLo: 0, outHi: 255 }); sync(); upd(); } }, t('Reset'));
   const chans = ['r', 'g', 'b'].map((k) => checkbox({ label: { r: 'R', g: 'G', b: 'B' }[k], checked: L[k], onChange: (v) => { L[k] = v; upd(); } }).el);
   requestAnimationFrame(draw);
   return h('div.levels-editor',
     h('div.levels-grid',
-      h('div.levels-col', h('div.prop-label', 'Input'), h('label', 'White ', inHi.el), h('label', 'Black ', inLo.el)),
-      h('div.levels-mid', hist, h('label.levels-gamma', 'Gamma ', gamma.el)),
-      h('div.levels-col', h('div.prop-label', 'Output'), h('label', 'White ', outHi.el), h('label', 'Black ', outLo.el))),
+      h('div.levels-col', h('div.prop-label', t('Input')), h('label', t('White') + ' ', inHi.el), h('label', t('Black') + ' ', inLo.el)),
+      h('div.levels-mid', hist, h('label.levels-gamma', t('Gamma') + ' ', gamma.el)),
+      h('div.levels-col', h('div.prop-label', t('Output')), h('label', t('White') + ' ', outHi.el), h('label', t('Black') + ' ', outLo.el))),
     h('div.curves-foot', h('div.levels-ch', chans), h('span', auto, ' ', reset)));
 }

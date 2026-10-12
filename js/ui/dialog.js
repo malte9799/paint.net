@@ -1,5 +1,6 @@
 import { h, icon, dragPointer } from './dom.js';
 import { clamp } from '../util.js';
+import { t } from '../i18n.js';
 
 const stack = [];
 export const openDialogCount = () => stack.length;
@@ -11,12 +12,12 @@ export class Dialog {
     this.btnEls = {};
     const titleBar = h('div.dlg-title',
       ic ? icon(ic) : null,
-      h('span.dlg-title-text', title || ''),
-      h('button.dlg-close', { title: 'Close', onclick: () => this.close(this._cancelValue()) }, icon('close')),
+      h('span.dlg-title-text', t(title) || ''),
+      h('button.dlg-close', { title: t('Close'), onclick: () => this.close(this._cancelValue()) }, icon('close')),
     );
     this.body = h('div.dlg-body', content);
     const btnRow = h('div.dlg-buttons', this.buttons.map((b) => {
-      const el = h('button.btn' + (b.primary ? '.primary' : ''), { onclick: () => this.close(b.value) }, b.label);
+      const el = h('button.btn' + (b.primary ? '.primary' : ''), { onclick: () => this.close(b.value) }, t(b.label));
       this.btnEls[b.value] = el;
       return el;
     }));
@@ -93,21 +94,21 @@ export function sliderRow({ label, value, min, max, step = 1, decimals = 0, def,
   };
   const num = numberInput({ value, min, max, step, decimals, onInput: (v) => set(v, true) });
   slider.addEventListener('input', () => set(fromS(+slider.value), true));
-  const reset = h('button.reset-btn', { title: 'Reset', onclick: () => set(def, true) }, icon('reset'));
-  const el = h('div.prop-row', label ? h('div.prop-label', label) : null, h('div.prop-ctl', slider, num.el, reset));
+  const reset = h('button.reset-btn', { title: t('Reset'), onclick: () => set(def, true) }, icon('reset'));
+  const el = h('div.prop-row', label ? h('div.prop-label', t(label)) : null, h('div.prop-ctl', slider, num.el, reset));
   return { el, get value() { return cur; }, set value(v) { set(v, false); } };
 }
 
 export function checkbox({ label, checked = false, onChange }) {
   const inp = h('input', { type: 'checkbox', checked });
   inp.addEventListener('change', () => onChange?.(inp.checked));
-  const el = h('label.check', inp, h('span', label));
+  const el = h('label.check', inp, h('span', t(label)));
   return { el, get value() { return inp.checked; }, set value(v) { inp.checked = v; } };
 }
 
 export function selectBox({ options, value, onChange, width }) {
   const sel = h('select.select', { style: width ? { width: width + 'px' } : null },
-    options.map(([v, l]) => h('option', { value: v, selected: v === value }, l)));
+    options.map(([v, l]) => h('option', { value: v, selected: v === value }, t(l))));
   sel.addEventListener('change', () => onChange?.(sel.value));
   return { el: sel, get value() { return sel.value; }, set value(v) { sel.value = v; } };
 }
@@ -119,7 +120,7 @@ export function radioGroup({ options, value, onChange, name = 'r' + Math.random(
     const inp = h('input', { type: 'radio', name, value: v, checked: v === value });
     inputs.push(inp);
     inp.addEventListener('change', () => { if (inp.checked) { cur = v; onChange?.(v); } });
-    return h('label.check', inp, h('span', l));
+    return h('label.check', inp, h('span', t(l)));
   }));
   return { el, get value() { return cur; }, set value(v) { cur = v; inputs.forEach((i) => (i.checked = i.value === String(v))); } };
 }
@@ -155,8 +156,8 @@ export function angleChooser({ label, value = 0, def, onInput }) {
     set(a, true);
   };
   cv.addEventListener('pointerdown', (e) => { fromPointer(e); dragPointer(e, (dx, dy, ev) => fromPointer(ev)); });
-  const reset = h('button.reset-btn', { title: 'Reset', onclick: () => set(def, true) }, icon('reset'));
-  const el = h('div.prop-row', label ? h('div.prop-label', label) : null, h('div.prop-ctl.angle-ctl', cv, num.el, reset));
+  const reset = h('button.reset-btn', { title: t('Reset'), onclick: () => set(def, true) }, icon('reset'));
+  const el = h('div.prop-row', label ? h('div.prop-label', t(label)) : null, h('div.prop-ctl.angle-ctl', cv, num.el, reset));
   requestAnimationFrame(draw);
   return { el, get value() { return cur; }, set value(v) { set(v, false); } };
 }
@@ -190,8 +191,8 @@ export function panChooser({ label, value = { x: 0, y: 0 }, def, onInput, thumb 
     set({ x: ((e.clientX - r.left) / r.width) * 2 - 1, y: ((e.clientY - r.top) / r.height) * 2 - 1 }, true);
   };
   cv.addEventListener('pointerdown', (e) => { fromPointer(e); dragPointer(e, (dx, dy, ev) => fromPointer(ev)); });
-  const reset = h('button.reset-btn', { title: 'Reset', onclick: () => set(def, true) }, icon('reset'));
-  const el = h('div.prop-row', label ? h('div.prop-label', label) : null,
+  const reset = h('button.reset-btn', { title: t('Reset'), onclick: () => set(def, true) }, icon('reset'));
+  const el = h('div.prop-row', label ? h('div.prop-label', t(label)) : null,
     h('div.prop-ctl.pan-ctl', cv, h('div.pan-nums', h('label', 'X ', nx.el), h('label', 'Y ', ny.el)), reset));
   requestAnimationFrame(draw);
   return { el, get value() { return { ...cur }; }, set value(v) { set(v, false); } };
@@ -199,7 +200,7 @@ export function panChooser({ label, value = { x: 0, y: 0 }, def, onInput, thumb 
 
 // ---------- Message boxes ----------
 export function messageBox(text, { title = 'paint.net', icon: ic = 'info', buttons } = {}) {
-  const content = h('div.msgbox', h('div.msgbox-icon', icon(ic)), h('div.msgbox-text', text));
+  const content = h('div.msgbox', h('div.msgbox-icon', icon(ic)), h('div.msgbox-text', t(text)));
   return new Dialog({ title, content, buttons: buttons || [{ label: 'OK', value: 'ok', primary: true, cancel: true }], width: 420 }).show();
 }
 
@@ -213,6 +214,6 @@ export function confirmBox(text, opts = {}) {
 
 export function promptBox(text, value = '', title = 'paint.net') {
   const inp = h('input.text', { type: 'text', value, style: { width: '100%' } });
-  const d = new Dialog({ title, content: h('div.form', h('div', text), inp), width: 360 });
+  const d = new Dialog({ title, content: h('div.form', h('div', t(text)), inp), width: 360 });
   return d.show().then((r) => (r === 'ok' ? inp.value : null));
 }

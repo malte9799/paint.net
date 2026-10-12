@@ -10,6 +10,7 @@ import { Settings, listRecent, deserializeDoc } from './storage.js';
 import { EFFECTS } from './effects/registry.js';
 import { runEffectCommand } from './effects/runner.js';
 import { h } from './ui/dom.js';
+import { t } from './i18n.js';
 
 // Replace every layer's canvas with a new one of size (w,h) produced by draw(ctx, layer, index)
 function transformLayers(doc, w, h, draw) {
@@ -332,7 +333,7 @@ export function buildCommands(app) {
   def('layers.add', {
     label: 'Add New Layer', icon: 'layeradd', shortcut: 'Ctrl+Shift+N',
     run: () => layerOp('Add New Layer', 'layeradd', (d) => {
-      const l = new Layer(d.width, d.height, 'Layer ' + (nextLayerNumber(d)));
+      const l = new Layer(d.width, d.height, t('Layer {n}', { n: nextLayerNumber(d) }));
       d.layers.splice(d.activeIndex + 1, 0, l);
       d.activeIndex++;
     }),
@@ -343,7 +344,7 @@ export function buildCommands(app) {
   });
   def('layers.duplicate', {
     label: 'Duplicate Layer', icon: 'layerduplicate', shortcut: 'Ctrl+Shift+D',
-    run: () => layerOp('Duplicate Layer', 'layerduplicate', (d) => { const l = d.activeLayer.clone(d.activeLayer.name + ' copy'); d.layers.splice(d.activeIndex + 1, 0, l); d.activeIndex++; }),
+    run: () => layerOp('Duplicate Layer', 'layerduplicate', (d) => { const l = d.activeLayer.clone(t('{name} copy', { name: d.activeLayer.name })); d.layers.splice(d.activeIndex + 1, 0, l); d.activeIndex++; }),
   });
   def('layers.merge', {
     label: 'Merge Layer Down', icon: 'layermerge', shortcut: 'Ctrl+M', enabled: () => hasDoc() && doc().activeIndex > 0,
@@ -371,7 +372,7 @@ export function buildCommands(app) {
           d.layers.splice(d.activeIndex + 1, 0, l);
           d.activeIndex++;
         });
-      } catch (e) { messageBox('Could not import the file.\n\n' + e.message, { icon: 'warning' }); }
+      } catch (e) { messageBox(t('Could not import the file.') + '\n\n' + e.message, { icon: 'warning' }); }
     },
   });
   const flipLayer = (name, icon, sx, sy) => () => layerOp(name, icon, (d) => {
@@ -420,7 +421,7 @@ export function buildCommands(app) {
   }
   def('fx.repeat', {
     label: 'Repeat', icon: 'effects', shortcut: 'Ctrl+F', enabled: () => hasDoc() && !!app.lastEffect,
-    labelFn: () => (app.lastEffect ? 'Repeat ' + EFFECTS[app.lastEffect].name : 'Repeat'),
+    labelFn: () => (app.lastEffect ? t('Repeat') + ': ' + t(EFFECTS[app.lastEffect].name) : t('Repeat')),
     run: () => runEffectCommand(app, app.lastEffect, { repeat: true }),
   });
 
@@ -436,7 +437,7 @@ export function buildCommands(app) {
 function nextLayerNumber(d) {
   let n = d.layers.length + 1;
   const names = new Set(d.layers.map((l) => l.name));
-  while (names.has('Layer ' + n)) n++;
+  while (names.has(t('Layer {n}', { n }))) n++;
   return n;
 }
 

@@ -5,6 +5,7 @@ import { Dialog, sliderRow, selectBox, messageBox, confirmBox } from './ui/dialo
 import { h } from './ui/dom.js';
 import { recordDocOp } from './history.js';
 import { addRecent } from './storage.js';
+import { t as tr } from './i18n.js';
 
 export const FORMATS = [
   { id: 'png', name: 'PNG', exts: ['png'], mime: 'image/png' },
@@ -34,7 +35,7 @@ export async function readImageFile(file, name = file.name) {
   }
   const canvas = ext === 'tga' ? decodeTGA(await file.arrayBuffer()) : await blobToCanvas(file);
   const doc = new Document(canvas.width, canvas.height, { name, baseName: 'Open Image', baseIcon: 'open', fileType: formatByExt(ext)?.id || 'png' });
-  doc.layers.push(Layer.fromCanvas(canvas, 'Background'));
+  doc.layers.push(Layer.fromCanvas(canvas, tr('Background')));
   return doc;
 }
 
@@ -43,7 +44,7 @@ export async function pickFiles({ multiple = true } = {}) {
     try {
       const handles = await window.showOpenFilePicker({
         multiple,
-        types: [{ description: 'All images', accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.jpe', '.jfif', '.gif', '.webp', '.bmp', '.dib', '.ico', '.avif', '.tga', '.ora'] } }],
+        types: [{ description: tr('All images'), accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.jpe', '.jfif', '.gif', '.webp', '.bmp', '.dib', '.ico', '.avif', '.tga', '.ora'] } }],
       });
       return Promise.all(handles.map(async (hd) => ({ file: await hd.getFile(), handle: hd })));
     } catch (e) {
@@ -70,7 +71,7 @@ export async function openFiles(app, entries) {
       addRecent(doc);
     } catch (e) {
       console.error(e);
-      await messageBox(`There was an error opening "${file.name}".\n\n${e.message || e}`, { icon: 'warning' });
+      await messageBox(tr('There was an error opening "{name}".', { name: file.name }) + `\n\n${e.message || e}`, { icon: 'warning' });
     }
   }
 }
@@ -98,7 +99,7 @@ async function saveConfig(fmt, doc) {
   let q = doc._saveQuality || 95;
   const preview = h('div.save-size', '');
   const update = async () => {
-    try { const b = await encode(doc, fmt, { quality: q }); preview.textContent = `File size: ${(b.size / 1024).toFixed(1)} KB`; } catch {}
+    try { const b = await encode(doc, fmt, { quality: q }); preview.textContent = tr('File size: {size}', { size: (b.size / 1024).toFixed(1) + ' KB' }); } catch {}
   };
   const row = sliderRow({ label: 'Quality', value: q, min: 1, max: 100, def: 95, onInput: (v) => { q = v; clearTimeout(t); t = setTimeout(update, 200); } });
   let t = setTimeout(update, 50);
@@ -120,13 +121,13 @@ async function ensureFlattenable(app, doc, fmt) {
 async function saveAsDialog(doc) {
   const name = h('input.text', { type: 'text', value: stripExt(doc.name) });
   const cur = doc.fileType && FORMATS.find((f) => f.id === doc.fileType) ? doc.fileType : doc.layers.length > 1 ? 'ora' : 'png';
-  const type = selectBox({ options: FORMATS.map((f) => [f.id, `${f.name} (*.${f.exts.join(', *.')})`]), value: cur });
-  const content = h('div.form.saveas-form', h('label', 'File name:'), name, h('label', 'Save as type:'), type.el,
-    h('div.hint', 'The file will be downloaded by your browser.'));
+  const type = selectBox({ options: FORMATS.map((f) => [f.id, `${tr(f.name)} (*.${f.exts.join(', *.')})`]), value: cur });
+  const content = h('div.form.saveas-form', h('label', tr('File name:')), name, h('label', tr('Save as type:')), type.el,
+    h('div.hint', tr('The file will be downloaded by your browser.')));
   const res = await new Dialog({ title: 'Save As', icon: 'saveas', content, width: 420, buttons: [{ label: 'Save', value: 'ok', primary: true }, { label: 'Cancel', value: 'cancel', cancel: true }] }).show();
   if (res !== 'ok') return null;
   const fmt = FORMATS.find((f) => f.id === type.value);
-  let n = name.value.trim() || 'Untitled';
+  let n = name.value.trim() || tr('Untitled');
   if (!fmt.exts.includes(fileExt(n))) n += '.' + fmt.exts[0];
   return { name: n, fmt, handle: null };
 }
@@ -144,7 +145,7 @@ export async function saveDocument(app, doc, saveAs = false) {
     try {
       handle = await window.showSaveFilePicker({
         suggestedName: stripExt(doc.name) + '.' + ordered[0].exts[0],
-        types: ordered.map((f) => ({ description: f.name, accept: { [f.mime]: f.exts.map((e) => '.' + e) } })),
+        types: ordered.map((f) => ({ description: tr(f.name), accept: { [f.mime]: f.exts.map((e) => '.' + e) } })),
       });
     } catch (e) {
       if (e.name === 'AbortError') return false;
@@ -180,7 +181,7 @@ export async function saveDocument(app, doc, saveAs = false) {
     return true;
   } catch (e) {
     console.error(e);
-    await messageBox('There was an error saving the file.\n\n' + (e.message || e), { icon: 'warning' });
+    await messageBox(tr('There was an error saving the file.') + '\n\n' + (e.message || e), { icon: 'warning' });
     return false;
   } finally {
     app.setBusy(false);

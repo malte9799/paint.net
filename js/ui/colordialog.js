@@ -2,6 +2,7 @@ import { Dialog, numberInput } from './dialog.js';
 import { h, dragPointer } from './dom.js';
 import { rgbToHsv, hsvToRgb, toHex, fromHex, toCss } from '../color.js';
 import { clamp } from '../util.js';
+import { t } from '../i18n.js';
 
 function gradSlider({ min, max, onInput }) {
   const thumb = h('div.gs-thumb');
@@ -58,16 +59,16 @@ export async function colorDialog(app, which) {
     const gs = gradSlider({ min: 0, max, onInput: (v) => onChannel(key, v) });
     const num = numberInput({ value: 0, min: 0, max, width: 56, onInput: (v) => onChannel(key, v) });
     rows[key] = { gs, num };
-    return h('div.cd-row', h('label', label), gs.el, num.el);
+    return h('div.cd-row', h('label', t(label)), gs.el, num.el);
   };
   const hex = h('input.text.hex-input', { type: 'text', maxlength: 9, spellcheck: false });
   hex.addEventListener('change', () => { const v = fromHex(hex.value); if (v) { Object.assign(c, v); hsv = rgbToHsv(c.r, c.g, c.b); sync(); } });
   hex.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); hex.dispatchEvent(new Event('change')); } });
 
-  const oldSw = h('div.cd-sw.old', { title: 'Original color — click to restore', onclick: () => { Object.assign(c, orig[mode]); hsv = rgbToHsv(c.r, c.g, c.b); sync(); } });
-  const newSw = h('div.cd-sw.new', { title: 'New color' });
-  const btnP = h('button.seg-btn', { onclick: () => switchMode('primary') }, 'Primary');
-  const btnS = h('button.seg-btn', { onclick: () => switchMode('secondary') }, 'Secondary');
+  const oldSw = h('div.cd-sw.old', { title: t('Original color — click to restore'), onclick: () => { Object.assign(c, orig[mode]); hsv = rgbToHsv(c.r, c.g, c.b); sync(); } });
+  const newSw = h('div.cd-sw.new', { title: t('New color') });
+  const btnP = h('button.seg-btn', { onclick: () => switchMode('primary') }, t('Primary'));
+  const btnS = h('button.seg-btn', { onclick: () => switchMode('secondary') }, t('Secondary'));
   const switchMode = (m) => { mode = m; c = cur[mode]; hsv = rgbToHsv(c.r, c.g, c.b); sync(); };
 
   function onChannel(key, v) {
@@ -112,7 +113,7 @@ export async function colorDialog(app, which) {
       h('div.cd-sliders',
         h('div.cd-group', h('div.cd-group-title', 'RGB'), mkRow('r', 'Red', 255), mkRow('g', 'Green', 255), mkRow('b', 'Blue', 255)),
         h('div.cd-group', h('div.cd-group-title', 'HSV'), mkRow('h', 'Hue', 360), mkRow('s', 'Saturation', 100), mkRow('v', 'Value', 100)),
-        h('div.cd-group', mkRow('a', 'Opacity', 255), h('div.cd-row', h('label', 'Hex'), hex)))));
+        h('div.cd-group', mkRow('a', 'Opacity', 255), h('div.cd-row', h('label', t('Hex')), hex)))));
   sync();
   const dlg = new Dialog({ title: 'Colors', icon: 'colors', content, width: 560, className: 'color-dlg' });
   const res = await dlg.show();

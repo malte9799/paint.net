@@ -1,6 +1,7 @@
 import { h, icon, clear } from './dom.js';
 import { dropdown, SEP } from './menubar.js';
 import { debounce } from '../util.js';
+import { t, tKeys } from '../i18n.js';
 
 export class TopBar {
   constructor(app, host) {
@@ -8,15 +9,15 @@ export class TopBar {
     // Right side of the title/menu row: window toggles, settings, help
     this.toggles = {};
     const tog = (w, label, key) => {
-      const b = h('button.tb-btn.toggle', { title: `${label} (${key})`, onclick: () => app.run('window.' + w) }, icon(w));
+      const b = h('button.tb-btn.toggle', { title: `${t(label)} (${key})`, onclick: () => app.run('window.' + w) }, icon(w));
       this.toggles[w] = b;
       return b;
     };
     this.right = h('div.titlebar-right',
       tog('tools', 'Tools', 'F5'), tog('history', 'History', 'F6'), tog('layers', 'Layers', 'F7'), tog('colors', 'Colors', 'F8'),
       h('div.tb-sep'),
-      h('button.tb-btn', { title: 'Settings', onclick: () => app.run('app.settings') }, icon('settings')),
-      h('button.tb-btn.dropdown-btn', { title: 'Help', onclick: (e) => dropdown(app, e.currentTarget, ['app.shortcuts', 'app.website', SEP, 'app.about']) }, icon('help')));
+      h('button.tb-btn', { title: t('Settings'), onclick: () => app.run('app.settings') }, icon('settings')),
+      h('button.tb-btn.dropdown-btn', { title: t('Help'), onclick: (e) => dropdown(app, e.currentTarget, ['app.shortcuts', 'app.website', SEP, 'app.about']) }, icon('help')));
     host.appendChild(this.right);
     app.on('windows', () => this.update());
     this.update();
@@ -32,7 +33,7 @@ export class MainToolbar {
     this.btns = {};
     const B = (cmd, extraCls = '') => {
       const c = app.commands.get(cmd);
-      const b = h('button.tb-btn' + extraCls, { title: c.label.replace(/…$/, '') + (c.shortcut ? ` (${c.shortcut})` : ''), onclick: () => app.run(cmd) }, icon(c.icon));
+      const b = h('button.tb-btn' + extraCls, { title: t(c.label.replace(/…$/, '')) + (c.shortcut ? ` (${tKeys(c.shortcut)})` : ''), onclick: () => app.run(cmd) }, icon(c.icon));
       this.btns[cmd] = b;
       return b;
     };
@@ -68,7 +69,7 @@ export class MainToolbar {
     for (const d of app.documents) {
       const th = d.thumbnail(56);
       th.className = 'tab-thumb';
-      const close = h('button.tab-close', { title: 'Close', onclick: (e) => { e.stopPropagation(); app.closeDocument(d); } }, icon('close'));
+      const close = h('button.tab-close', { title: t('Close'), onclick: (e) => { e.stopPropagation(); app.closeDocument(d); } }, icon('close'));
       const tab = h('div.image-tab' + (d === app.activeDoc ? '.active' : '') + (d.dirty ? '.dirty' : ''),
         { role: 'tab', title: d.name + (d.dirty ? ' *' : ''), onclick: () => app.setActiveDocument(d), onauxclick: (e) => { if (e.button === 1) app.closeDocument(d); } },
         h('div.tab-thumb-wrap', th), close);

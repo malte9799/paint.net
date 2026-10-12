@@ -1,6 +1,7 @@
 import { Emitter, createCanvas, cloneCanvas, Rect, uid } from './util.js';
 import { History } from './history.js';
 import { Selection } from './selection.js';
+import { t } from './i18n.js';
 
 export const BLEND_MODES = [
   ['normal', 'Normal'], ['multiply', 'Multiply'], ['additive', 'Additive'], ['colorburn', 'Color Burn'],
@@ -51,10 +52,10 @@ export class Layer {
 }
 
 let untitled = 0;
-export function nextUntitled() { untitled++; return 'Untitled' + (untitled > 1 ? ` ${untitled}` : ''); }
+export function nextUntitled() { untitled++; return t('Untitled') + (untitled > 1 ? ` ${untitled}` : ''); }
 // Keep the "Untitled N" counter ahead of names restored from storage.
 function noteName(name) {
-  const m = /^Untitled(?: (\d+))?(?:\.\w+)?$/.exec(name || '');
+  const m = /^(?:Untitled|Unbenannt)(?: (\d+))?(?:\.\w+)?$/.exec(name || '');
   if (m) untitled = Math.max(untitled, m[1] ? +m[1] : 1);
 }
 
@@ -79,7 +80,7 @@ export class Document extends Emitter {
     this.view = null; // per-document view state (zoom/scroll), owned by CanvasView
     this.history.on('change', () => this.emit('history'));
     if (opts.background !== undefined) {
-      const bg = new Layer(w, h, 'Background');
+      const bg = new Layer(w, h, t('Background'));
       if (opts.background) {
         const c = bg.ctx;
         c.fillStyle = opts.background;

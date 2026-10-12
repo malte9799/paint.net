@@ -3,6 +3,7 @@ import { showPopup, closeAllMenus } from './menubar.js';
 import { clamp } from '../util.js';
 import { SHAPES } from '../tools/shapes.js';
 import { BLEND_MODES } from '../document.js';
+import { t } from '../i18n.js';
 
 const BRUSH_SIZES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 450, 500, 600, 700, 800, 900, 1000];
 const FONTS = ['Segoe UI', 'Arial', 'Arial Black', 'Calibri', 'Cambria', 'Comic Sans MS', 'Consolas', 'Courier New', 'Georgia', 'Impact', 'Lucida Console', 'Palatino Linotype', 'Tahoma', 'Times New Roman', 'Trebuchet MS', 'Verdana', 'system-ui', 'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy'];
@@ -10,13 +11,13 @@ const FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
 
 // Icon-choice dropdown: shows the current option's icon/label, opens a popup list
 function choiceButton(app, { title, options, get, set, iconFn, labelFn, showLabel = false }) {
-  const btn = h('button.opt-btn.dropdown-btn', { title });
+  const btn = h('button.opt-btn.dropdown-btn', { title: t(title) });
   const render = () => {
     clear(btn);
     const v = get();
     const opt = options.find((o) => o[0] === v) || options[0];
     if (iconFn) btn.appendChild(iconFn(opt[0]));
-    if (showLabel || !iconFn) btn.appendChild(h('span.opt-label', labelFn ? labelFn(opt) : opt[1]));
+    if (showLabel || !iconFn) btn.appendChild(h('span.opt-label', t(labelFn ? labelFn(opt) : opt[1])));
     btn.appendChild(icon('chevdown', 'opt-chev'));
   };
   btn.addEventListener('click', () => {
@@ -38,7 +39,7 @@ function choiceButton(app, { title, options, get, set, iconFn, labelFn, showLabe
 }
 
 function toggleBtn(title, ic, get, set) {
-  const b = h('button.opt-btn.toggle', { title, onclick: () => { set(!get()); upd(); } }, typeof ic === 'string' ? icon(ic) : ic);
+  const b = h('button.opt-btn.toggle', { title: t(title), onclick: () => { set(!get()); upd(); } }, typeof ic === 'string' ? icon(ic) : ic);
   const upd = () => b.classList.toggle('active', !!get());
   upd();
   return { el: b, render: upd };
@@ -46,11 +47,11 @@ function toggleBtn(title, ic, get, set) {
 
 // Editable numeric combo box with preset dropdown
 function numberCombo(app, { title, get, set, presets, min, max, width = 52, suffix = '' }) {
-  const inp = h('input.combo-input', { type: 'text', title, style: { width: width + 'px' } });
+  const inp = h('input.combo-input', { type: 'text', title: t(title), style: { width: width + 'px' } });
   const commit = () => { const v = parseFloat(inp.value); if (!isNaN(v)) set(clamp(Math.round(v), min, max)); inp.value = get() + suffix; };
   inp.addEventListener('change', commit);
   inp.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') { commit(); inp.blur(); } if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); set(clamp(get() + (e.key === 'ArrowUp' ? 1 : -1), min, max)); inp.value = get() + suffix; } });
-  const drop = h('button.combo-drop.dropdown-btn', { title }, icon('chevdown'));
+  const drop = h('button.combo-drop.dropdown-btn', { title: t(title) }, icon('chevdown'));
   drop.addEventListener('click', () => {
     closeAllMenus();
     const r = inp.getBoundingClientRect();
@@ -66,11 +67,11 @@ function numberCombo(app, { title, get, set, presets, min, max, width = 52, suff
 function barSlider({ label, get, set, min = 0, max = 100, fmt = (v) => Math.round(v) + '%' }) {
   const fill = h('div.bar-fill');
   const text = h('div.bar-text');
-  const bar = h('div.bar-slider', { title: label }, fill, text);
+  const bar = h('div.bar-slider', { title: t(label) }, fill, text);
   const render = () => {
     const v = get();
     fill.style.width = ((v - min) / (max - min)) * 100 + '%';
-    text.textContent = `${label}: ${fmt(v)}`;
+    text.textContent = `${t(label)}: ${fmt(v)}`;
   };
   const fromEv = (e) => {
     const r = bar.getBoundingClientRect();
@@ -137,15 +138,15 @@ function selModeIcon(m) {
 export class ToolOptionsBar {
   constructor(app, host) {
     this.app = app;
-    this.toolBtn = h('button.opt-btn.tool-select.dropdown-btn', { title: 'Tool' });
+    this.toolBtn = h('button.opt-btn.tool-select.dropdown-btn', { title: t('Tool') });
     this.toolBtn.addEventListener('click', () => {
       closeAllMenus();
       const r = this.toolBtn.getBoundingClientRect();
       this.toolBtn.classList.add('open');
-      showPopup(app, [...app.tools.values()].map((t) => ({ label: t.name, icon: t.icon, shortcut: t.key, checked: () => false, run: () => app.setTool(t.id) })), r.left, r.bottom, () => this.toolBtn.classList.remove('open'));
+      showPopup(app, [...app.tools.values()].map((tool) => ({ label: tool.name, icon: tool.icon, shortcut: tool.key, checked: () => false, run: () => app.setTool(tool.id) })), r.left, r.bottom, () => this.toolBtn.classList.remove('open'));
     });
     this.opts = h('div.tooloptions-items');
-    this.el = h('div.tooloptions', h('span.opt-caption', 'Tool:'), this.toolBtn, h('div.tb-sep'), this.opts);
+    this.el = h('div.tooloptions', h('span.opt-caption', t('Tool:')), this.toolBtn, h('div.tb-sep'), this.opts);
     host.appendChild(this.el);
     this.widgets = [];
     app.on('tool', () => this.build());
@@ -156,7 +157,7 @@ export class ToolOptionsBar {
     const app = this.app, S = app.toolSettings;
     const get = (k) => () => S[k];
     const set = (k) => (v) => app.setToolSetting(k, v);
-    const cap = (t) => h('span.opt-caption', t);
+    const cap = (s) => h('span.opt-caption', t(s));
     switch (key) {
       case 'brushWidth': {
         const c = numberCombo(app, { title: 'Brush width', get: get('brushWidth'), set: set('brushWidth'), presets: BRUSH_SIZES, min: 1, max: 2000 });
@@ -185,7 +186,7 @@ export class ToolOptionsBar {
       case 'sampling':
         return { el: h('span.opt-group', cap('Sampling:'), choiceButton(app, { title: 'Sampling', options: [['layer', 'Layer'], ['image', 'Image']], get: get('sampling'), set: set('sampling'), showLabel: true }).el) };
       case 'font': {
-        const sel = h('select.select.font-select', { title: 'Font' }, FONTS.map((f) => h('option', { value: f, style: { fontFamily: f } }, f)));
+        const sel = h('select.select.font-select', { title: t('Font') }, FONTS.map((f) => h('option', { value: f, style: { fontFamily: f } }, f)));
         sel.addEventListener('change', () => app.setToolSetting('font', sel.value));
         sel.addEventListener('keydown', (e) => e.stopPropagation());
         const render = () => { sel.value = S.font; };
@@ -258,13 +259,13 @@ export class ToolOptionsBar {
     return null;
   }
   build() {
-    const t = this.app.activeTool;
+    const tool = this.app.activeTool;
     clear(this.toolBtn);
-    this.toolBtn.append(icon(t.icon), icon('chevdown', 'opt-chev'));
-    this.toolBtn.title = t.name;
+    this.toolBtn.append(icon(tool.icon), icon('chevdown', 'opt-chev'));
+    this.toolBtn.title = t(tool.name);
     clear(this.opts);
     this.widgets = [];
-    t.options.forEach((key, i) => {
+    tool.options.forEach((key, i) => {
       const w = this.widget(key);
       if (!w) return;
       if (this.widgets.length) this.opts.appendChild(h('div.tb-sep'));

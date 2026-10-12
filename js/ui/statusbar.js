@@ -3,6 +3,7 @@ import { showPopup, closeAllMenus } from './menubar.js';
 import { ZOOM_LEVELS } from '../view.js';
 import { Settings } from '../storage.js';
 import { clamp } from '../util.js';
+import { t, tKeys } from '../i18n.js';
 
 const UNITS = [['px', 'Pixels'], ['in', 'Inches'], ['cm', 'Centimeters']];
 
@@ -16,25 +17,25 @@ export class StatusBar {
     this.sel = h('span.sb-val');
     this.pos = h('span.sb-val');
     this.size = h('span.sb-val');
-    this.unitBtn = h('button.sb-units.dropdown-btn', { title: 'Units' });
+    this.unitBtn = h('button.sb-units.dropdown-btn', { title: t('Units') });
     this.unitBtn.addEventListener('click', () => {
       closeAllMenus();
       const r = this.unitBtn.getBoundingClientRect();
       const m = showPopup(app, UNITS.map(([u, l]) => ({ label: l, checked: () => Settings.get('units', 'px') === u, run: () => app.run('view.units.' + u) })), r.left, r.top, null);
       requestAnimationFrame(() => { const pr = m.el.getBoundingClientRect(); m.el.style.top = r.top - pr.height + 'px'; });
     });
-    this.zoomSlider = h('input.sb-zoom-slider', { type: 'range', min: 0, max: 1000, step: 1, title: 'Zoom' });
+    this.zoomSlider = h('input.sb-zoom-slider', { type: 'range', min: 0, max: 1000, step: 1, title: t('Zoom') });
     this.zoomSlider.addEventListener('input', () => {
-      const t = +this.zoomSlider.value / 1000;
-      app.view.setZoom(Math.exp(Math.log(0.01) + t * (Math.log(64) - Math.log(0.01))));
+      const k = +this.zoomSlider.value / 1000;
+      app.view.setZoom(Math.exp(Math.log(0.01) + k * (Math.log(64) - Math.log(0.01))));
     });
-    this.zoomInput = h('input.sb-zoom-input', { type: 'text', title: 'Zoom' });
+    this.zoomInput = h('input.sb-zoom-input', { type: 'text', title: t('Zoom') });
     this.zoomInput.addEventListener('change', () => {
       const v = parseFloat(this.zoomInput.value);
       if (v > 0) app.view.setZoom(clamp(v / 100, 0.01, 64)); else this.update();
     });
     this.zoomInput.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') this.zoomInput.blur(); });
-    const zoomDrop = h('button.combo-drop.dropdown-btn', { title: 'Zoom presets' }, icon('chevdown'));
+    const zoomDrop = h('button.combo-drop.dropdown-btn', { title: t('Zoom presets') }, icon('chevdown'));
     zoomDrop.addEventListener('click', () => {
       closeAllMenus();
       const r = this.zoomInput.getBoundingClientRect();
@@ -45,14 +46,14 @@ export class StatusBar {
     this.el = h('footer.statusbar',
       h('div.sb-left', this.hintIcon, this.hint),
       h('div.sb-right',
-        h('span.sb-item', { title: 'Selection size' }, svgIcon('<rect x="2.5" y="3.5" width="11" height="9" stroke-dasharray="2 1.5"/>'), this.sel),
-        h('span.sb-item', { title: 'Cursor position' }, svgIcon('<path d="M8 1.5v4M8 10.5v4M1.5 8h4M10.5 8h4"/><circle cx="8" cy="8" r="1"/>'), this.pos),
-        h('span.sb-item', { title: 'Image size' }, svgIcon('<rect x="2.5" y="2.5" width="11" height="11"/><path d="M5 11l2-3 2 2 2-3"/>'), this.size),
+        h('span.sb-item', { title: t('Selection size') }, svgIcon('<rect x="2.5" y="3.5" width="11" height="9" stroke-dasharray="2 1.5"/>'), this.sel),
+        h('span.sb-item', { title: t('Cursor position') }, svgIcon('<path d="M8 1.5v4M8 10.5v4M1.5 8h4M10.5 8h4"/><circle cx="8" cy="8" r="1"/>'), this.pos),
+        h('span.sb-item', { title: t('Image size') }, svgIcon('<rect x="2.5" y="2.5" width="11" height="11"/><path d="M5 11l2-3 2 2 2-3"/>'), this.size),
         this.unitBtn,
         h('span.sb-zoom',
-          h('button.sb-zbtn', { title: 'Zoom out', onclick: () => app.view.zoomOut() }, icon('zoomout')),
+          h('button.sb-zbtn', { title: t('Zoom out'), onclick: () => app.view.zoomOut() }, icon('zoomout')),
           this.zoomSlider,
-          h('button.sb-zbtn', { title: 'Zoom in', onclick: () => app.view.zoomIn() }, icon('zoomin')),
+          h('button.sb-zbtn', { title: t('Zoom in'), onclick: () => app.view.zoomIn() }, icon('zoomin')),
           h('span.combo', this.zoomInput, zoomDrop))));
     host.appendChild(this.el);
     this.selRect = null;
@@ -74,12 +75,12 @@ export class StatusBar {
     return String(Math.round(v));
   }
   updateHint() {
-    const t = this.app.activeTool;
-    clear(this.hintIcon).appendChild(icon(t.icon));
-    this.hint.textContent = this.flash || `${t.name}: ${t.hint}`;
+    const tool = this.app.activeTool;
+    clear(this.hintIcon).appendChild(icon(tool.icon));
+    this.hint.textContent = this.flash || `${t(tool.name)}: ${t(tool.hint)}`;
   }
   flashMessage(msg) {
-    this.flash = msg;
+    this.flash = t(msg);
     this.updateHint();
     clearTimeout(this._ft);
     this._ft = setTimeout(() => { this.flash = null; this.updateHint(); }, 4000);
@@ -90,7 +91,7 @@ export class StatusBar {
   update() {
     const d = this.app.activeDoc;
     const u = Settings.get('units', 'px');
-    this.unitBtn.textContent = UNITS.find(([k]) => k === u)[1];
+    this.unitBtn.textContent = t(UNITS.find(([k]) => k === u)[1]);
     this.unitBtn.appendChild(icon('chevdown', 'opt-chev'));
     if (!d) { this.sel.textContent = this.size.textContent = this.pos.textContent = ''; return; }
     const r = this.selRect || (d.selection.empty ? null : d.selection.bounds);
